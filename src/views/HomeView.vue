@@ -125,7 +125,10 @@ export default {
     },
     async getDataFromDb() {
       try {
-        const response = await axios.get("http://localhost:3000/posts");
+       
+        // const response = await axios.get("http://localhost:3000/Training/test_task_nodejs/src/api/request.php");
+        const response = await axios.get("http://api/api/request.php");
+        console.log(response.data)
         this.dataTable = response.data
         this.totalEntries = this.dataTable.length
         this.dataFromJson = this.dataTable
