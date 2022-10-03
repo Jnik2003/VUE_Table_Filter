@@ -1,16 +1,11 @@
 <?php
+header('Access-Control-Allow-Origin: *');
 $postData = file_get_contents('php://input');
 $data = json_decode($postData, true);
-// echo($data['limit'])
-
-
-header('Access-Control-Allow-Origin: *');
 
 define('SERVER', 'localhost');
 define('USER', 'root');
-// define('USER', 'pnikitinas_vdo3');
 define('PASSWORD', 'root');
-// define('PASSWORD', '0GAMdpEY');
 define('DB', 'test_table');
 
 $conn = connect();
@@ -41,21 +36,15 @@ function select($query)
 
 if(isset($data['page']) && isset($data['limit'])){
     $value1 = ($data['page']-1)* $data['limit'] + 1;
-// $value1 = 5;
     $value2 = $data['page'] * $data['limit'];
-// $value2 = 9;
 
-// $query = "SELECT * FROM `distance`  WHERE 1 limit ".$data['limit'];  
  
 $query = "SELECT * FROM `distance` WHERE id BETWEEN $value1 AND $value2"; 
 }else{
    $query = "SELECT * FROM `distance`  WHERE 1";  
 }
-
- 
      
 $result = select($query);
-
 
 echo json_encode($result, JSON_NUMERIC_CHECK);
 ?>

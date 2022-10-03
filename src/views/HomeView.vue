@@ -6,32 +6,30 @@
         :options="column"
         :labelName="sortValueName"
         v-model="sortValue"
-        
       />
-      <my-select :options="term" v-model="termValue" :labelName="termName" :sortValue="sortValue"/>
+      <my-select
+        :options="term"
+        v-model="termValue"
+        :labelName="termName"
+        :sortValue="sortValue"
+      />
       <div class="inp">
         <label>Поисковая строка</label>
-      <input 
-        :type="
-          sortValue == 'date'
-            ? 'date'
-            : sortValue == 'description'
-            ? 'text'
-            : 'number'
-        "
-        v-if="sortValue != 'date'"
-        v-model="searchValue"
-        :disabled="termValue == ''"   
-       
-      >
-      <input type="date"
-        v-else    
-        v-model="searchDate"
-        @input="setDateValue"
-       
-      >
+        <input
+          :type="
+            sortValue == 'date'
+              ? 'date'
+              : sortValue == 'description'
+              ? 'text'
+              : 'number'
+          "
+          v-if="sortValue != 'date'"
+          v-model="searchValue"
+          :disabled="termValue == ''"
+        />
+        <input type="date" v-else v-model="searchDate" @input="setDateValue" />
       </div>
-     
+
       <my-select v-model="limit" :options="limitData" :labelName="limitName" />
     </div>
 
@@ -44,7 +42,7 @@
         <th>Расстояние</th>
       </tr>
 
-      <tr v-for="data in dataTable" :key="data.id">
+      <tr v-for="data in calcDataTable" :key="data.id">
         <td>{{ data.id }}</td>
         <td>{{ data.date }}</td>
         <td>{{ data.description }}</td>
@@ -67,14 +65,16 @@
 </template>
 
 <script>
-import dataFromJson from "@/core/data.json"; // локальный объект для разработки
+//import dataFromJson from "@/core/data.json"; // локальный объект для разработки
 import MySelect from "@/components/UI/MySelect.vue";
+import axios from "axios";
 
 export default {
   name: "HomeView",
   data() {
     return {
       dataTable: [],
+      dataFromJson: [],
       //---------
       column: [
         { value: "date", name: "Дата" },
@@ -99,16 +99,16 @@ export default {
         { value: "5", name: "5" },
         { value: "10", name: "10" },
       ],
-      limit: "5",// кол-во постов на одной странице
+      limit: "5", // кол-во постов на одной странице
       limitName: "Кол-во на стр.",
       //----------
       searchValue: "",
       // searchDate: new Date().toISOString().slice(0, 10),
-      searchDate: '',
+      searchDate: "",
       //-------
       page: 1, // номер страницы для пагинации
       totalPages: 0, //подсчет для пагинации
-      totalEntries: dataFromJson.length,
+      totalEntries: 0,
     };
   },
   components: {
@@ -123,6 +123,16 @@ export default {
         ? (this.searchValue = this.searchDate)
         : (this.searchValue = "");
     },
+    async getDataFromDb() {
+      try {
+        const response = await axios.get("http://localhost:3000/posts");
+        this.dataTable = response.data
+        this.totalEntries = this.dataTable.length
+        this.dataFromJson = this.dataTable
+      } catch (error) {
+        console.log("err");
+      }
+    },
   },
   computed: {
     calcTotalPages() {
@@ -132,7 +142,7 @@ export default {
     calcDataTable() {
       // фильтр и кол-во записей на странице
       if (this.searchValue != "") {
-        this.dataTable = dataFromJson.filter((item) => {
+        this.dataTable = this.dataFromJson.filter((item) => {
           //return item.distance > this.searchValue; // условия для фильтра
           if (this.termValue == "same") {
             return item[this.sortValue] == this.searchValue;
@@ -140,15 +150,21 @@ export default {
             return item[this.sortValue] > this.searchValue;
           } else if (this.termValue == "less") {
             return item[this.sortValue] < this.searchValue;
-          }else if (this.termValue == "contains" && this.sortValue == 'description') {
-            return item[this.sortValue].toUpperCase().includes(this.searchValue.toUpperCase());
-          }
-          else if (this.termValue == "contains") {           
-            return item[this.sortValue].toString().includes(this.searchValue.toString());
+          } else if (
+            this.termValue == "contains" &&
+            this.sortValue == "description"
+          ) {
+            return item[this.sortValue]
+              .toUpperCase()
+              .includes(this.searchValue.toUpperCase());
+          } else if (this.termValue == "contains") {
+            return item[this.sortValue]
+              .toString()
+              .includes(this.searchValue.toString());
           }
         });
       } else {
-        this.dataTable = dataFromJson.filter((item) => {
+        this.dataTable = this.dataFromJson.filter((item) => {
           return item;
         });
       }
@@ -160,12 +176,10 @@ export default {
         this.limit * this.page
       ));
     },
-    
-   
   },
 
   mounted() {
-    this.calcDataTable;
+    this.getDataFromDb();
   },
   watch: {},
 };
@@ -198,7 +212,7 @@ export default {
   align-items: center;
   margin-bottom: 20px;
 }
-.inp{
+.inp {
   display: flex;
   flex-direction: column;
 }
